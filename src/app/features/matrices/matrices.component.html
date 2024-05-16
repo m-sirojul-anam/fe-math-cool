@@ -1,0 +1,157 @@
+<main class="mx-4">
+  <div
+    class="grid sm:grid-cols-1 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3 gap-y-5"
+  >
+    <div id="matrix_a">
+      <form [formGroup]="formSettingMatrixA">
+        <div
+          class="grid sm:grid-cols-1 md:grid-cols-1 xl:grid-cols-3 mb-2 text-base gap-y-2"
+        >
+          <p>Matrix <strong>A</strong></p>
+          <div class="grid sm:grid-cols-2 md:grid-cols-2 xl:col-span-2">
+            <div class="flex gap-2">
+              <p>Rows :</p>
+              <select
+                name="rows_matrix_a"
+                id="rows_matrix_a"
+                class="rounded-md sm:w-16 md:w-16"
+                formControlName="rows"
+              >
+                <option *ngFor="let number of listSelect" [value]="number">
+                  {{ number }}
+                </option>
+              </select>
+            </div>
+            <div class="flex gap-2">
+              <p>Cols :</p>
+              <select
+                name="cols_matrix_a"
+                id="cols_matrix_a"
+                class="rounded-md sm:w-16 md:w-16"
+                formControlName="cols"
+              >
+                <option *ngFor="let number of listSelect" [value]="number">
+                  {{ number }}
+                </option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </form>
+      <form [formGroup]="formMatrixA">
+        <table
+          class="table-auto w-full text-sm rounded-lg overflow-hidden border-separate"
+        >
+          <tbody class="bg-white">
+            <tr
+              *ngFor="let row of listSelect; let i = index"
+              formGroupName="row{{ i + 1 }}"
+            >
+              <td *ngFor="let col of listSelect; let j = index">
+                <input type="text" formControlName="col{{ j + 1 }}" />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </form>
+    </div>
+    <div class="flex justify-center items-center">
+      <form [formGroup]="formOperation">
+        <div class="h-10 overflow-y-visible">
+          <select class="rounded-md h-10 text-xl" formControlName="operation">
+            <option
+              *ngFor="let operation of listOperation"
+              [value]="operation.value"
+            >
+              {{ decodeHtmlEntity(operation.label) }}
+            </option>
+          </select>
+        </div>
+      </form>
+    </div>
+    <div id="matrix_b">
+      <form [formGroup]="formSettingMatrixB">
+        <div
+          class="grid sm:grid-cols-1 d:grid-cols-1 xl:grid-cols-3 mb-2 text-base gap-y-2"
+        >
+          <p>Matrix <strong>B</strong></p>
+          <div class="grid sm:grid-cols-2 md:grid-cols-2 xl:col-span-2">
+            <div class="flex gap-2">
+              <p>Rows :</p>
+              <select
+                name="rows_matrix_b"
+                id="rows_matrix_b"
+                class="rounded-md sm:w-16 md:w-16"
+                formControlName="rows"
+              >
+                <option *ngFor="let number of listSelect" [value]="number">
+                  {{ number }}
+                </option>
+              </select>
+            </div>
+            <div class="flex gap-2">
+              <p>Cols :</p>
+              <select
+                name="cols_matrix_b"
+                id="cols_matrix_b"
+                class="rounded-md sm:w-16 md:w-16"
+                formControlName="cols"
+              >
+                <option *ngFor="let number of listSelect" [value]="number">
+                  {{ number }}
+                </option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </form>
+      <form [formGroup]="formMatrixB">
+        <table
+          class="table-auto w-full text-sm rounded-lg overflow-hidden border-separate"
+        >
+          <tbody class="bg-white">
+            <tr
+              *ngFor="let row of listSelect; let i = index"
+              formGroupName="row{{ i + 1 }}"
+            >
+              <td *ngFor="let col of listSelect; let j = index">
+                <input type="text" formControlName="col{{ j + 1 }}" />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </form>
+    </div>
+  </div>
+
+  <div class="mt-5">
+    <p>Result :</p>
+    <div class="w-full min-h-96 bg-white rounded-xl mt-2">
+      <div class="container p-4">
+        {{ matrixA }}
+        <table id="tableResult" class="table-auto text-sm">
+          <tbody>
+            <tr>
+              <td rowspan="3">01 =&nbsp;</td>
+              <td class="border-result-left" rowspan="3"></td>
+              <td>02</td>
+              <td>03</td>
+              <td>03</td>
+              <td class="border-result-right" rowspan="3"></td>
+            </tr>
+            <tr>
+              <td>04</td>
+              <td>05</td>
+              <td>05</td>
+            </tr>
+            <tr>
+              <td>04</td>
+              <td>05</td>
+              <td>05</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</main>
