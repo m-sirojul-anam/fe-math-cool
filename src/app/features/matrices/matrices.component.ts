@@ -2,18 +2,18 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import {
   FormBuilder,
-  FormControl,
   FormGroup,
   FormsModule,
   ReactiveFormsModule,
 } from '@angular/forms';
-import { Subscription, combineLatest, startWith } from 'rxjs';
+import { combineLatest, startWith } from 'rxjs';
 import { OperationType } from './models/matrices.model';
+import { ErrorComponent } from '../error/error.component';
 
 @Component({
   selector: 'app-matrices',
   standalone: true,
-  imports: [ReactiveFormsModule, FormsModule, CommonModule],
+  imports: [ReactiveFormsModule, FormsModule, CommonModule, ErrorComponent],
   templateUrl: './matrices.component.html',
   styleUrl: './matrices.component.scss',
 })
@@ -23,27 +23,23 @@ export class MatricesComponent implements OnInit {
   formMatrixA: FormGroup;
   formMatrixB: FormGroup;
   formOperation: FormGroup;
-  result: any;
+  result: number[][] = [];
   listSelect: number[] = [1, 2, 3, 4, 5, 6];
   listOperation: { label: string; value: string }[] = [
-    {
-      label: 'Find',
-      value: '',
-    },
     {
       label: 'A × A',
       value: 'MULTIPLY_A',
     },
     {
-      label: '|A| (Determinan A)',
+      label: '|A|',
       value: 'DET_A',
     },
     {
-      label: 'A&#x1D40; (Transpose A)',
+      label: 'A&#x1D40;',
       value: 'TRANSPOSE_A',
     },
     {
-      label: 'A⁻¹ (Invers A)',
+      label: 'A⁻¹',
       value: 'INVERS_A',
     },
     {
@@ -51,15 +47,15 @@ export class MatricesComponent implements OnInit {
       value: 'MULTIPLY_B',
     },
     {
-      label: '|B| (Determinan B)',
+      label: '|B|',
       value: 'DET_B',
     },
     {
-      label: 'B&#x1D40; (Transpose B)',
+      label: 'B&#x1D40;',
       value: 'TRANSPOSE_B',
     },
     {
-      label: 'B⁻¹ (Invers B)',
+      label: 'B⁻¹',
       value: 'INVERS_B',
     },
     {
@@ -87,6 +83,7 @@ export class MatricesComponent implements OnInit {
       value: 'INVERS_B_MULTIPLY_A',
     },
   ];
+  operation?: string = '';
   matrixA: number[][] = [];
   matrixB: number[][] = [];
   rowCount: number = 6;
@@ -95,6 +92,9 @@ export class MatricesComponent implements OnInit {
   colsMatrixA: number;
   rowsMatrixB: number;
   colsMatrixB: number;
+  isError: boolean = false;
+  isLoading: boolean = false;
+  errorMessage: string = '';
 
   constructor(private formBuilder: FormBuilder) {}
 
@@ -125,7 +125,6 @@ export class MatricesComponent implements OnInit {
     );
 
     this.updateElementMatrix();
-    this.selectOperation();
   }
 
   createMatrixForm(rows: number, cols: number): FormGroup {
@@ -175,7 +174,7 @@ export class MatricesComponent implements OnInit {
         this.colsMatrixB = fCols
           ? fCols
           : this.formSettingMatrixB.get('cols')?.value;
-        this.setActiveElementMatrix('B', this.colsMatrixB, this.colsMatrixB);
+        this.setActiveElementMatrix('B', this.rowsMatrixB, this.colsMatrixB);
       });
   }
 
@@ -187,11 +186,15 @@ export class MatricesComponent implements OnInit {
             const row = this.formMatrixA.get(`row${i}`) as FormGroup;
             for (let j = 1; j <= this.colCount; j++) {
               if (j <= cols) row.get(`col${j}`)?.enable();
-              else row.get(`col${j}`)?.disable();
+              else {
+                row.get(`col${j}`)?.setValue(0);
+                row.get(`col${j}`)?.disable();
+              }
             }
           } else {
             const row = this.formMatrixA.get(`row${i}`) as FormGroup;
             for (let j = 1; j <= this.colCount; j++) {
+              row.get(`col${j}`)?.setValue(0);
               row.get(`col${j}`)?.disable();
             }
           }
@@ -203,11 +206,15 @@ export class MatricesComponent implements OnInit {
             const row = this.formMatrixB.get(`row${i}`) as FormGroup;
             for (let j = 1; j <= this.colCount; j++) {
               if (j <= cols) row.get(`col${j}`)?.enable();
-              else row.get(`col${j}`)?.disable();
+              else {
+                row.get(`col${j}`)?.setValue(0);
+                row.get(`col${j}`)?.disable();
+              }
             }
           } else {
             const row = this.formMatrixB.get(`row${i}`) as FormGroup;
             for (let j = 1; j <= this.colCount; j++) {
+              row.get(`col${j}`)?.setValue(0);
               row.get(`col${j}`)?.disable();
             }
           }
@@ -222,18 +229,10 @@ export class MatricesComponent implements OnInit {
     return textarea.value;
   }
 
-  selectOperation() {
-    let fOperation = this.formOperation.controls;
-
-    combineLatest(fOperation['operation'].valueChanges.pipe(startWith('')))
-      .pipe()
-      .subscribe(([value]) => {
-        if (value) {
-          this.setElementMatrix('A', this.rowsMatrixA, this.colsMatrixA);
-          this.setElementMatrix('B', this.rowsMatrixB, this.colsMatrixB);
-          this.executeOperation(value);
-        }
-      });
+  selectOperation(operation: string) {
+    this.setElementMatrix('A', this.rowsMatrixA, this.colsMatrixA);
+    this.setElementMatrix('B', this.rowsMatrixB, this.colsMatrixB);
+    this.executeOperation(operation as OperationType);
   }
 
   setElementMatrix(matrix: 'A' | 'B', rows: number, cols: number) {
@@ -248,7 +247,6 @@ export class MatricesComponent implements OnInit {
           }
           this.matrixA.push(numberElements);
         }
-        console.log(this.matrixA);
         break;
       case 'B':
         this.matrixB = [];
@@ -260,12 +258,15 @@ export class MatricesComponent implements OnInit {
           }
           this.matrixB.push(numberElements);
         }
-        console.log(this.matrixB);
         break;
     }
   }
 
   executeOperation(operation: OperationType) {
+    this.isLoading = true;
+    this.operation = this.listOperation.find(
+      (el) => el.value == operation
+    )?.label;
     switch (operation) {
       case 'MULTIPLY_A':
         this.multiply(this.matrixA, this.matrixA);
@@ -313,24 +314,85 @@ export class MatricesComponent implements OnInit {
   }
 
   multiply(firstElements: number[][], secondElements: number[][]) {
-    console.log('FIRST ELEMENTS => ', firstElements);
-    console.log('SECOND ELEMENTS => ', secondElements);
+    if (firstElements[0].length != secondElements.length) {
+      this.isError = true;
+      this.errorMessage = `Tidak dapat melakukan operasi ${this.operation}, jumlah kolom matrix pertama tidak sama dengan jumlah baris matrix kedua`;
+    } else {
+      this.isError = false;
+      this.result = [];
+      for (let i = 0; i < firstElements.length; i++) {
+        this.result[i] = [];
+        for (let j = 0; j < firstElements.length; j++) {
+          let tempResAdd: number = 0;
+          for (let k = 0; k < firstElements[i].length; k++) {
+            tempResAdd += firstElements[i][k] * secondElements[k][j];
+          }
+          this.result[i].push(tempResAdd);
+        }
+      }
+    }
+    this.isLoading = false;
   }
 
-  determinan(elements: number[][]) {}
+  determinan(elements: number[][]) {
+    this.isError = false;
+  }
 
-  transpose(elements: number[][]) {}
+  transpose(elements: number[][]) {
+    this.isError = false;
+  }
 
   invers(elements: number[][]): number[][] {
+    this.isError = false;
     return elements;
   }
 
-  add(firstElements: number[][], secondElements: number[][]) {}
+  add(firstElements: number[][], secondElements: number[][]) {
+    if (firstElements.length != secondElements.length) {
+      this.isError = true;
+      this.errorMessage = `Tidak dapat melakukan operasi ${this.operation}, jumlah baris dan kolom matrix pertama tidak sama dengan matrix kedua`;
+    } else {
+      this.isError = false;
+      this.result = [];
+      for (let i = 0; i < firstElements.length; i++) {
+        const rows: number[] = [];
+        for (let j = 0; j < firstElements[i].length; j++) {
+          const tempElementRows: number =
+            Number(firstElements[i][j]) + Number(secondElements[i][j]);
+          rows.push(tempElementRows);
+        }
+        this.result.push(rows);
+      }
+    }
+    this.isLoading = false;
+  }
 
-  reduce(firstElements: number[][], secondElements: number[][]) {}
+  reduce(firstElements: number[][], secondElements: number[][]) {
+    if (firstElements.length != secondElements.length) {
+      this.isLoading = false;
+      this.isError = true;
+    } else {
+      this.isLoading = false;
+      this.isError = false;
+      this.result = [];
+      for (let i = 0; i < firstElements.length; i++) {
+        const rows: number[] = [];
+        for (let j = 0; j < firstElements[i].length; j++) {
+          const tempElementRows: number =
+            Number(firstElements[i][j]) - Number(secondElements[i][j]);
+          rows.push(tempElementRows);
+        }
+        this.result.push(rows);
+      }
+    }
+  }
 
   inversAndMultiply(firstElements: number[][], secondElements: number[][]) {
     const invers = this.invers(firstElements);
     this.multiply(invers, secondElements);
+  }
+
+  handleModalClose(isError: boolean): void {
+    this.isError = isError;
   }
 }

@@ -1,6 +1,6 @@
 <main class="mx-4">
   <div
-    class="grid sm:grid-cols-1 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3 gap-y-5"
+    class="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-y-5 md:gap-x-32 lg:gap-x-52 xl:gap-x-64"
   >
     <div id="matrix_a">
       <form [formGroup]="formSettingMatrixA">
@@ -8,13 +8,13 @@
           class="grid sm:grid-cols-1 md:grid-cols-1 xl:grid-cols-3 mb-2 text-base gap-y-2"
         >
           <p>Matrix <strong>A</strong></p>
-          <div class="grid sm:grid-cols-2 md:grid-cols-2 xl:col-span-2">
+          <div class="grid grid-cols-2 md:grid-cols-2 xl:col-span-2">
             <div class="flex gap-2">
               <p>Rows :</p>
               <select
                 name="rows_matrix_a"
                 id="rows_matrix_a"
-                class="rounded-md sm:w-16 md:w-16"
+                class="rounded-md w-16 md:w-16"
                 formControlName="rows"
               >
                 <option *ngFor="let number of listSelect" [value]="number">
@@ -27,7 +27,7 @@
               <select
                 name="cols_matrix_a"
                 id="cols_matrix_a"
-                class="rounded-md sm:w-16 md:w-16"
+                class="rounded-md w-16 md:w-16"
                 formControlName="cols"
               >
                 <option *ngFor="let number of listSelect" [value]="number">
@@ -55,33 +55,19 @@
         </table>
       </form>
     </div>
-    <div class="flex justify-center items-center">
-      <form [formGroup]="formOperation">
-        <div class="h-10 overflow-y-visible">
-          <select class="rounded-md h-10 text-xl" formControlName="operation">
-            <option
-              *ngFor="let operation of listOperation"
-              [value]="operation.value"
-            >
-              {{ decodeHtmlEntity(operation.label) }}
-            </option>
-          </select>
-        </div>
-      </form>
-    </div>
     <div id="matrix_b">
       <form [formGroup]="formSettingMatrixB">
         <div
           class="grid sm:grid-cols-1 d:grid-cols-1 xl:grid-cols-3 mb-2 text-base gap-y-2"
         >
           <p>Matrix <strong>B</strong></p>
-          <div class="grid sm:grid-cols-2 md:grid-cols-2 xl:col-span-2">
+          <div class="grid grid-cols-2 md:grid-cols-2 xl:col-span-2">
             <div class="flex gap-2">
               <p>Rows :</p>
               <select
                 name="rows_matrix_b"
                 id="rows_matrix_b"
-                class="rounded-md sm:w-16 md:w-16"
+                class="rounded-md w-16 md:w-16"
                 formControlName="rows"
               >
                 <option *ngFor="let number of listSelect" [value]="number">
@@ -94,7 +80,7 @@
               <select
                 name="cols_matrix_b"
                 id="cols_matrix_b"
-                class="rounded-md sm:w-16 md:w-16"
+                class="rounded-md w-16 md:w-16"
                 formControlName="cols"
               >
                 <option *ngFor="let number of listSelect" [value]="number">
@@ -124,30 +110,55 @@
     </div>
   </div>
 
+  <div class="grid grid-cols-4 gap-1 max-w-80 my-14 mx-auto">
+    <button
+      type="button"
+      class="bg-blue-400 hover:bg-blue-500 active:bg-blue-600 active:shadow-md text-white py-2 px-3 rounded-md"
+      *ngFor="let item of listOperation"
+      (click)="selectOperation(item.value)"
+    >
+      {{ decodeHtmlEntity(item.label) }}
+    </button>
+  </div>
+
   <div class="mt-5">
-    <p>Result :</p>
+    <p class="text-lg">Result :</p>
     <div class="w-full min-h-96 bg-white rounded-xl mt-2">
-      <div class="container p-4">
-        {{ matrixA }}
+      <div
+        class="container flex items-center justify-center min-h-96"
+        *ngIf="isLoading"
+      >
+        <div
+          aria-label="Loading..."
+          role="status"
+          class="flex items-center space-x-2"
+        >
+          <img
+            class="w-20 h-20 animate-spin"
+            src="https://www.svgrepo.com/show/199956/loading-loader.svg"
+            alt="Loading icon"
+          />
+          <span class="text-4xl font-medium text-gray-500">Loading...</span>
+        </div>
+      </div>
+      <div class="container p-4" *ngIf="!isLoading">
         <table id="tableResult" class="table-auto text-sm">
           <tbody>
-            <tr>
-              <td rowspan="3">01 =&nbsp;</td>
-              <td class="border-result-left" rowspan="3"></td>
-              <td>02</td>
-              <td>03</td>
-              <td>03</td>
-              <td class="border-result-right" rowspan="3"></td>
-            </tr>
-            <tr>
-              <td>04</td>
-              <td>05</td>
-              <td>05</td>
-            </tr>
-            <tr>
-              <td>04</td>
-              <td>05</td>
-              <td>05</td>
+            <tr *ngFor="let items of result; let i = index">
+              <td *ngIf="i == 0" [attr.rowspan]="items.length">
+                {{ operation }} =
+              </td>
+              <td
+                *ngIf="i == 0"
+                class="border-result-left"
+                [attr.rowspan]="items.length"
+              ></td>
+              <td *ngFor="let item of items">{{ item }}</td>
+              <td
+                *ngIf="i == 0"
+                class="border-result-right"
+                [attr.rowspan]="items.length"
+              ></td>
             </tr>
           </tbody>
         </table>
@@ -155,3 +166,5 @@
     </div>
   </div>
 </main>
+
+<app-error [message]="errorMessage" [isShow]="isError" (closeModal)="handleModalClose(false)"></app-error>
