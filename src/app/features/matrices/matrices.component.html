@@ -143,7 +143,7 @@
       </div>
       <div class="container p-4" *ngIf="!isLoading">
         <table id="tableResult" class="table-auto text-sm">
-          <tbody>
+          <tbody *ngIf="result.length > 0">
             <tr *ngFor="let items of result; let i = index">
               <td *ngIf="i == 0" [attr.rowspan]="result.length">
                 {{ decodeHtmlEntity(operation) }} =
@@ -159,6 +159,14 @@
                 class="border-result-right"
                 [attr.rowspan]="result.length"
               ></td>
+            </tr>
+          </tbody>
+          <tbody *ngIf="determinantResult.length > 0">
+            <tr *ngFor="let item of determinantResult; let i = index">
+              <td *ngIf="i == 0" [attr.rowspan]="result.length">
+                {{ decodeHtmlEntity(operation) }} =
+              </td>
+              <td>{{ item }}</td>
             </tr>
           </tbody>
         </table>

@@ -24,6 +24,7 @@ export class MatricesComponent implements OnInit {
   formMatrixB: FormGroup;
   formOperation: FormGroup;
   result: number[][] = [];
+  determinantResult: number[] = [];
   listSelect: number[] = [1, 2, 3, 4, 5, 6];
   listOperation: { label: string; value: string }[] = [
     {
@@ -337,8 +338,59 @@ export class MatricesComponent implements OnInit {
     this.isLoading = false;
   }
 
-  determinan(elements: number[][]) {
-    this.isError = false;
+  determinan(elements: number[][]): number {
+    if (elements.length != elements[0].length) {
+      this.isError = true;
+      this.errorMessage = `Tidak dapat melakukan operasi ${this.operation}, bukan matrix persegi`;
+      return 0;
+    } else {
+      this.isError = false;
+      this.determinantResult = [];
+
+      const n = elements.length;
+      let det: number = 1;
+      let swapCount = 0;
+
+      const mat = elements.map((row) => row.slice());
+
+      for (let i = 0; i < n; i++) {
+        let pivotRow = i;
+        for (let j = i + 1; j < n; j++) {
+          if (Math.abs(mat[j][i]) > Math.abs(mat[pivotRow][i])) {
+            pivotRow = j;
+          }
+        }
+
+        if (mat[pivotRow][i] === 0) {
+          return 0;
+        }
+
+        if (pivotRow !== i) {
+          [mat[i], mat[pivotRow]] = [mat[pivotRow], mat[i]];
+          swapCount++;
+        }
+
+        for (let j = i + 1; j < n; j++) {
+          const factor = mat[j][i] / mat[i][i];
+          for (let k = i; k < n; k++) {
+            mat[j][k] -= factor * mat[i][k];
+          }
+        }
+      }
+
+      for (let i = 0; i < n; i++) {
+        det *= mat[i][i];
+      }
+
+      if (swapCount % 2 !== 0) {
+        det = -det;
+      }
+
+      this.determinantResult.push(Math.ceil(det));
+    }
+
+    this.isLoading = false;
+    return this.determinantResult[0];
   }
 
   transpose(elements: number[][]) {
