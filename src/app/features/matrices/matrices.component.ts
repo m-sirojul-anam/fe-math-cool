@@ -223,7 +223,7 @@ export class MatricesComponent implements OnInit {
     }
   }
 
-  decodeHtmlEntity(entity: string): string {
+  decodeHtmlEntity(entity: string = ''): string {
     const textarea = document.createElement('textarea');
     textarea.innerHTML = entity;
     return textarea.value;
@@ -327,6 +327,9 @@ export class MatricesComponent implements OnInit {
           for (let k = 0; k < firstElements[i].length; k++) {
             tempResAdd += firstElements[i][k] * secondElements[k][j];
           }
+          if (Number.isNaN(tempResAdd)) {
+            continue;
+          }
           this.result[i].push(tempResAdd);
         }
       }
@@ -340,6 +343,21 @@ export class MatricesComponent implements OnInit {
 
   transpose(elements: number[][]) {
     this.isError = false;
+    this.isLoading = true;
+
+    const rows = elements.length;
+    const cols = elements[0].length;
+
+    const transposed: number[][] = Array.from({ length: cols }, () => []);
+
+    for (let i = 0; i < rows; i++) {
+      for (let j = 0; j < cols; j++) {
+        transposed[j][i] = elements[i][j];
+      }
+    }
+
+    this.result = transposed;
+    this.isLoading = false;
   }
 
   invers(elements: number[][]): number[][] {

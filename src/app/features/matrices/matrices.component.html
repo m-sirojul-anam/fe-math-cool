@@ -145,19 +145,19 @@
         <table id="tableResult" class="table-auto text-sm">
           <tbody>
             <tr *ngFor="let items of result; let i = index">
-              <td *ngIf="i == 0" [attr.rowspan]="items.length">
-                {{ operation }} =
+              <td *ngIf="i == 0" [attr.rowspan]="result.length">
+                {{ decodeHtmlEntity(operation) }} =
               </td>
               <td
                 *ngIf="i == 0"
                 class="border-result-left"
-                [attr.rowspan]="items.length"
+                [attr.rowspan]="result.length"
               ></td>
               <td *ngFor="let item of items">{{ item }}</td>
               <td
                 *ngIf="i == 0"
                 class="border-result-right"
-                [attr.rowspan]="items.length"
+                [attr.rowspan]="result.length"
               ></td>
             </tr>
           </tbody>
@@ -167,4 +167,8 @@
   </div>
 </main>
 
-<app-error [message]="errorMessage" [isShow]="isError" (closeModal)="handleModalClose(false)"></app-error>
+<app-error
+  [message]="errorMessage"
+  [isShow]="isError"
+  (closeModal)="handleModalClose(false)"
+></app-error>
