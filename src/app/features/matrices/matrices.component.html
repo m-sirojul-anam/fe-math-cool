@@ -113,11 +113,12 @@
   <div class="grid grid-cols-4 gap-1 max-w-80 my-14 mx-auto">
     <button
       type="button"
-      class="bg-blue-400 hover:bg-blue-500 active:bg-blue-600 active:shadow-md text-white py-2 px-3 rounded-md"
-      *ngFor="let item of listOperation"
-      (click)="selectOperation(item.value)"
+      class="bg-blue-400 hover:bg-blue-500 active:bg-blue-600 active:shadow-md hover:cursor-pointer text-white py-2 px-3 rounded-md disabled:bg-gray-400 disabled:cursor-not-allowed"
+      *ngFor="let item of listMatrixmatrixOperation"
+      (click)="selectmatrixOperation(item.value)"
+      [disabled]="item.disabled"
     >
-      {{ decodeHtmlEntity(item.label) }}
+      {{ item.label | decodeHtml }}
     </button>
   </div>
 
@@ -141,36 +142,55 @@
           <span class="text-4xl font-medium text-gray-500">Loading...</span>
         </div>
       </div>
-      <div class="container p-4" *ngIf="!isLoading">
-        <table id="tableResult" class="table-auto text-sm">
-          <tbody *ngIf="result.length > 0">
-            <tr *ngFor="let items of result; let i = index">
-              <td *ngIf="i == 0" [attr.rowspan]="result.length">
-                {{ decodeHtmlEntity(operation) }} =
-              </td>
-              <td
-                *ngIf="i == 0"
-                class="border-result-left"
-                [attr.rowspan]="result.length"
-              ></td>
-              <td *ngFor="let item of items">{{ item }}</td>
-              <td
-                *ngIf="i == 0"
-                class="border-result-right"
-                [attr.rowspan]="result.length"
-              ></td>
-            </tr>
-          </tbody>
-          <tbody *ngIf="determinantResult.length > 0">
-            <tr *ngFor="let item of determinantResult; let i = index">
-              <td *ngIf="i == 0" [attr.rowspan]="result.length">
-                {{ decodeHtmlEntity(operation) }} =
-              </td>
-              <td>{{ item }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <section #resultSection class="container p-4" *ngIf="!isLoading">
+        <div class="grid grid-rows-3 gap-4" *ngIf="isShowResult">
+          <app-problems
+            [operator]="operator"
+            [matrixOperation]="matrixOperation"
+            [matrix1]="matrix1"
+            [matrix2]="matrix2"
+            *ngIf="!isError"
+          ></app-problems>
+          <app-steps
+            [matrixOperation]="matrixOperation"
+            [steps]="steps"
+            *ngIf="!isError"
+          ></app-steps>
+          <div>
+            <table id="tableResult" class="table-auto text-sm" *ngIf="!isError">
+              <tbody *ngIf="result.length > 0">
+                <tr *ngFor="let items of result; let i = index">
+                  <td *ngIf="i == 0" [attr.rowspan]="result.length">
+                    {{ matrixOperation | decodeHtml }} =
+                  </td>
+                  <td
+                    *ngIf="i == 0"
+                    class="border-matrix-left"
+                    [attr.rowspan]="result.length"
+                  ></td>
+                  <td
+                    *ngFor="let item of items"
+                    [innerHtml]="sanitizeHtml(item | numberToFraction)"
+                  ></td>
+                  <td
+                    *ngIf="i == 0"
+                    class="border-matrix-right"
+                    [attr.rowspan]="result.length"
+                  ></td>
+                </tr>
+              </tbody>
+              <tbody *ngIf="determinantResult.length > 0">
+                <tr *ngFor="let item of determinantResult; let i = index">
+                  <td *ngIf="i == 0" [attr.rowspan]="result.length">
+                    {{ matrixOperation | decodeHtml }} =
+                  </td>
+                  <td>{{ item }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
     </div>
   </div>
 </main>

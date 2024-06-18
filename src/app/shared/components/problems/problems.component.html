@@ -1,0 +1,50 @@
+<div class="flex justify-start gap-4" *ngIf="matrixOperation && matrix1">
+  <div class="flex justify-center items-center">
+    {{ matrixOperation | decodeHtml }} =
+  </div>
+  <div class="flex justify-center">
+    <table id="tableProblems" class="table-auto text-sm">
+      <tbody *ngIf="matrix1.length > 0">
+        <tr *ngFor="let items of matrix1; let i = index">
+          <td
+            *ngIf="i == 0"
+            class="border-matrix-left"
+            [attr.rowspan]="matrix1.length"
+          ></td>
+          <td
+            *ngFor="let item of items"
+            [innerHtml]="sanitizeHtml(item | numberToFraction)"
+          ></td>
+          <td
+            *ngIf="i == 0"
+            class="border-matrix-right"
+            [attr.rowspan]="matrix1.length"
+          ></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="flex justify-center items-center p-0">{{ operator }}</div>
+  <div class="flex justify-center p-0">
+    <table id="tableProblems" class="table-auto text-sm">
+      <tbody *ngIf="matrix2 && matrix2.length > 0">
+        <tr *ngFor="let items of matrix2; let i = index">
+          <td
+            *ngIf="i == 0"
+            class="border-matrix-left"
+            [attr.rowspan]="matrix2.length"
+          ></td>
+          <td
+            *ngFor="let item of items"
+            [innerHtml]="sanitizeHtml(item | numberToFraction)"
+          ></td>
+          <td
+            *ngIf="i == 0"
+            class="border-matrix-right"
+            [attr.rowspan]="matrix2.length"
+          ></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

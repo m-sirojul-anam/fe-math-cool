@@ -1,7 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, HostListener } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { FooterComponent } from './shared/components/footer/footer.component';
-import { MenuComponent } from './shared/components/menu/menu.component';
+import { FooterComponent } from '@shared/components/footer/footer.component';
+import { MenuComponent } from '@shared/components/menu/menu.component';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -12,5 +12,14 @@ import { CommonModule } from '@angular/common';
   styleUrl: './app.component.scss',
 })
 export class AppComponent {
-  title = 'fe-mathcool';
+  showScrollToTopButton = false;
+
+  @HostListener('window:scroll', [])
+  onWindowScroll() {
+    this.showScrollToTopButton = window.scrollY > 100;
+  }
+
+  scrollToTop() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 }

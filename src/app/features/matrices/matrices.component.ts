@@ -1,92 +1,135 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import {
+  AbstractControl,
   FormBuilder,
   FormGroup,
   FormsModule,
   ReactiveFormsModule,
 } from '@angular/forms';
-import { combineLatest, startWith } from 'rxjs';
-import { OperationType } from './models/matrices.model';
-import { ErrorComponent } from '../error/error.component';
+import { SafeHtml } from '@angular/platform-browser';
+import { combineLatest, startWith, takeWhile } from 'rxjs';
+import { MatrixOperationType } from '@features/matrices/models/matrices.model';
+import { ErrorComponent } from '@features/error/error.component';
+import { DecodeHtmlPipe } from '@shared/utils/decode-html.pipe';
+import { StepsComponent } from '@shared/components/steps/steps.component';
+import { ProblemsComponent } from '@shared/components/problems/problems.component';
+import { UnaryOperators } from '@shared/enums/unary-operators';
+import Fraction from 'fraction.js';
+import { NumberToFractionPipe } from '@shared/utils/number-to-fraction.pipe';
+import { HtmlSanitizerService } from '@shared/services/html-sanitizer.service';
+import { NumberToFractionService } from '@shared/services/number-to-fraction.service';
 
 @Component({
   selector: 'app-matrices',
   standalone: true,
-  imports: [ReactiveFormsModule, FormsModule, CommonModule, ErrorComponent],
+  imports: [
+    ReactiveFormsModule,
+    FormsModule,
+    CommonModule,
+    ErrorComponent,
+    DecodeHtmlPipe,
+    NumberToFractionPipe,
+    ProblemsComponent,
+    StepsComponent,
+  ],
   templateUrl: './matrices.component.html',
   styleUrl: './matrices.component.scss',
 })
 export class MatricesComponent implements OnInit {
+  @ViewChild('resultSection') resultSection: ElementRef;
+
   formSettingMatrixA: FormGroup;
   formSettingMatrixB: FormGroup;
   formMatrixA: FormGroup;
   formMatrixB: FormGroup;
-  formOperation: FormGroup;
+  formMatrixOperation: FormGroup;
   result: number[][] = [];
+  steps: string[][] = [];
   determinantResult: number[] = [];
   listSelect: number[] = [1, 2, 3, 4, 5, 6];
-  listOperation: { label: string; value: string }[] = [
+  operator: UnaryOperators;
+  listMatrixmatrixOperation: {
+    label: string;
+    value: string;
+    disabled: boolean;
+  }[] = [
     {
       label: 'A × A',
       value: 'MULTIPLY_A',
+      disabled: false,
     },
     {
       label: '|A|',
       value: 'DET_A',
+      disabled: false,
     },
     {
       label: 'A&#x1D40;',
       value: 'TRANSPOSE_A',
+      disabled: false,
     },
     {
       label: 'A⁻¹',
       value: 'INVERS_A',
+      disabled: true,
     },
     {
       label: 'B × B',
       value: 'MULTIPLY_B',
+      disabled: false,
     },
     {
       label: '|B|',
       value: 'DET_B',
+      disabled: false,
     },
     {
       label: 'B&#x1D40;',
       value: 'TRANSPOSE_B',
+      disabled: false,
     },
     {
       label: 'B⁻¹',
       value: 'INVERS_B',
+      disabled: true,
     },
     {
       label: 'A × B',
       value: 'MULTIPLY_A_B',
+      disabled: false,
     },
     {
       label: 'A + B',
       value: 'ADD_A_B',
+      disabled: false,
     },
     {
       label: 'A - B',
       value: 'REDUCE_A_B',
+      disabled: false,
     },
     {
       label: 'B - A',
       value: 'REDUCE_B_A',
+      disabled: false,
     },
     {
       label: 'A⁻¹ × B',
       value: 'INVERS_A_MULTIPLY_B',
+      disabled: true,
     },
     {
       label: 'B⁻¹ × A',
       value: 'INVERS_B_MULTIPLY_A',
+      disabled: true,
     },
   ];
-  operation?: string = '';
+  matrixOperation?: string = '';
   matrixA: number[][] = [];
   matrixB: number[][] = [];
+  matrix1: number[][] = [];
+  matrix2: number[][] = [];
   rowCount: number = 6;
   colCount: number = 6;
   rowsMatrixA: number;
@@ -94,10 +137,16 @@ export class MatricesComponent implements OnInit {
   rowsMatrixB: number;
   colsMatrixB: number;
   isError: boolean = false;
+  isShowResult: boolean = false;
+  isDisabled: boolean = false;
   isLoading: boolean = false;
   errorMessage: string = '';
 
-  constructor(private formBuilder: FormBuilder) {}
+  constructor(
+    private formBuilder: FormBuilder,
+    private htmlSanitizerService: HtmlSanitizerService,
+    private numberToFractionServcie: NumberToFractionService
+  ) {}
 
   ngOnInit(): void {
     this.formSettingMatrixA = this.formBuilder.group({
@@ -108,8 +157,8 @@ export class MatricesComponent implements OnInit {
       rows: [2],
       cols: [2],
     });
-    this.formOperation = this.formBuilder.group({
-      operation: [''],
+    this.formMatrixOperation = this.formBuilder.group({
+      matrixOperation: [''],
     });
 
     this.formMatrixA = this.createMatrixForm(this.rowCount, this.colCount);
@@ -126,6 +175,45 @@ export class MatricesComponent implements OnInit {
     );
 
     this.updateElementMatrix();
+    this.addRealTimeSanitization(this.formMatrixA);
+    this.addRealTimeSanitization(this.formMatrixB);
+  }
+
+  addRealTimeSanitization(formGroup: FormGroup) {
+    Object.keys(formGroup.controls).forEach((rowKey) => {
+      const rowGroup = formGroup.get(rowKey) as FormGroup;
+      Object.keys(rowGroup.controls).forEach((colKey) => {
+        const control = rowGroup.get(colKey) as AbstractControl;
+        control.valueChanges.subscribe((value: any) => {
+          if (value) {
+            // Remove invalid characters
+            let sanitizedValue = value.replace(/[^0-9\/.-]/g, '');
+
+            // Handle '-' at the beginning and remove any subsequent '-'
+            if (sanitizedValue.startsWith('-')) {
+              sanitizedValue = '-' + sanitizedValue.slice(1).replace(/-/g, '');
+            } else {
+              sanitizedValue = sanitizedValue.replace(/-/g, '');
+            }
+
+            // Ensure only one instance of '/', '.', or '-'
+            sanitizedValue = sanitizedValue.replace(
+              /[\/.-]+/g,
+              (match: string) => match.charAt(0)
+            );
+
+            // Set the sanitized value
+            control.setValue(sanitizedValue, { emitEvent: false });
+          }
+        });
+      });
+    });
+  }
+
+  resetMatrixValue(): void {
+    this.isShowResult = false;
+    this.formMatrixA = this.createMatrixForm(this.rowCount, this.colCount);
+    this.formMatrixB = this.createMatrixForm(this.rowCount, this.colCount);
   }
 
   createMatrixForm(rows: number, cols: number): FormGroup {
@@ -224,16 +312,11 @@ export class MatricesComponent implements OnInit {
     }
   }
 
-  decodeHtmlEntity(entity: string = ''): string {
-    const textarea = document.createElement('textarea');
-    textarea.innerHTML = entity;
-    return textarea.value;
-  }
-
-  selectOperation(operation: string) {
+  selectmatrixOperation(matrixOperation: string) {
     this.setElementMatrix('A', this.rowsMatrixA, this.colsMatrixA);
     this.setElementMatrix('B', this.rowsMatrixB, this.colsMatrixB);
-    this.executeOperation(operation as OperationType);
+    this.executematrixOperation(matrixOperation as MatrixOperationType);
+    this.scrollToSection();
   }
 
   setElementMatrix(matrix: 'A' | 'B', rows: number, cols: number) {
@@ -263,13 +346,14 @@ export class MatricesComponent implements OnInit {
     }
   }
 
-  executeOperation(operation: OperationType) {
+  executematrixOperation(matrixOperation: MatrixOperationType) {
     this.isLoading = true;
-    this.operation = this.listOperation.find(
-      (el) => el.value == operation
+    this.matrixOperation = this.listMatrixmatrixOperation.find(
+      (el) => el.value == matrixOperation
     )?.label;
-    switch (operation) {
+    switch (matrixOperation) {
       case 'MULTIPLY_A':
+        this.operator = UnaryOperators.Multiply;
         this.multiply(this.matrixA, this.matrixA);
         break;
       case 'DET_A':
@@ -282,6 +366,7 @@ export class MatricesComponent implements OnInit {
         this.invers(this.matrixA);
         break;
       case 'MULTIPLY_B':
+        this.operator = UnaryOperators.Multiply;
         this.multiply(this.matrixB, this.matrixB);
         break;
       case 'DET_B':
@@ -294,64 +379,99 @@ export class MatricesComponent implements OnInit {
         this.invers(this.matrixB);
         break;
       case 'MULTIPLY_A_B':
+        this.operator = UnaryOperators.Multiply;
         this.multiply(this.matrixA, this.matrixB);
         break;
       case 'ADD_A_B':
+        this.operator = UnaryOperators.Plus;
         this.add(this.matrixA, this.matrixB);
         break;
       case 'REDUCE_A_B':
+        this.operator = UnaryOperators.Minus;
         this.reduce(this.matrixA, this.matrixB);
         break;
       case 'REDUCE_B_A':
+        this.operator = UnaryOperators.Minus;
         this.reduce(this.matrixB, this.matrixA);
         break;
       case 'INVERS_A_MULTIPLY_B':
+        this.operator = UnaryOperators.Multiply;
         this.inversAndMultiply(this.matrixA, this.matrixB);
         break;
       case 'INVERS_B_MULTIPLY_A':
+        this.operator = UnaryOperators.Multiply;
         this.inversAndMultiply(this.matrixB, this.matrixA);
         break;
     }
   }
 
-  multiply(firstElements: number[][], secondElements: number[][]) {
-    if (firstElements[0].length != secondElements.length) {
+  multiply(matrix1: number[][], matrix2: number[][]) {
+    if (matrix1[0].length != matrix2.length) {
       this.isError = true;
-      this.errorMessage = `Tidak dapat melakukan operasi ${this.operation}, jumlah kolom matrix pertama tidak sama dengan jumlah baris matrix kedua`;
+      this.errorMessage = `Tidak dapat melakukan operasi ${this.matrixOperation}, jumlah kolom matrix pertama tidak sama dengan jumlah baris matrix kedua`;
     } else {
       this.isError = false;
+      this.matrix1 = matrix1.map((rowValue) =>
+        rowValue.map((colValue) =>
+          this.convertFractionToNumber(colValue.toString())
+        )
+      );
+      this.matrix2 = matrix2.map((rowValue) =>
+        rowValue.map((colValue) =>
+          this.convertFractionToNumber(colValue.toString())
+        )
+      );
       this.result = [];
-      for (let i = 0; i < firstElements.length; i++) {
+      this.steps = [];
+      for (let i = 0; i < matrix1.length; i++) {
         this.result[i] = [];
-        for (let j = 0; j < firstElements.length; j++) {
+        this.steps[i] = [];
+        for (let j = 0; j < matrix1.length; j++) {
           let tempResAdd: number = 0;
-          for (let k = 0; k < firstElements[i].length; k++) {
-            tempResAdd += firstElements[i][k] * secondElements[k][j];
+          const tempSteps: string[] = [];
+          for (let k = 0; k < matrix1[i].length; k++) {
+            matrix1[i][k] = this.convertFractionToNumber(
+              matrix1[i][k].toString()
+            );
+            matrix2[k][j] = this.convertFractionToNumber(
+              matrix2[k][j].toString()
+            );
+            tempResAdd += matrix1[i][k] * matrix2[k][j];
+
+            const tempConvertNumToFract1 =
+              this.numberToFractionServcie.numberToFraction(matrix1[i][k]);
+            const tempConvertNumToFract2 =
+              this.numberToFractionServcie.numberToFraction(matrix2[k][j]);
+            tempSteps.push(
+              `(${tempConvertNumToFract1} * ${tempConvertNumToFract2})`
+            );
           }
           if (Number.isNaN(tempResAdd)) {
             continue;
           }
           this.result[i].push(tempResAdd);
+          this.steps[i].push(`(${tempSteps.join(' + ')})`);
         }
       }
     }
+    this.isShowResult = true;
     this.isLoading = false;
   }
 
-  determinan(elements: number[][]): number {
-    if (elements.length != elements[0].length) {
+  determinan(matrix: number[][]): number {
+    if (matrix.length != matrix[0].length) {
       this.isError = true;
-      this.errorMessage = `Tidak dapat melakukan operasi ${this.operation}, bukan matrix persegi`;
+      this.errorMessage = `Tidak dapat melakukan operasi ${this.matrixOperation}, bukan matrix persegi`;
       return 0;
     } else {
       this.isError = false;
       this.determinantResult = [];
 
-      const n = elements.length;
+      const n = matrix.length;
       let det: number = 1;
       let swapCount = 0;
 
-      const mat = elements.map((row) => row.slice());
+      const mat = matrix.map((row) => row.slice());
 
       for (let i = 0; i < n; i++) {
         let pivotRow = i;
@@ -389,80 +509,162 @@ export class MatricesComponent implements OnInit {
       this.determinantResult.push(Math.ceil(det));
     }
 
+    this.isShowResult = true;
     this.isLoading = false;
     return this.determinantResult[0];
   }
 
-  transpose(elements: number[][]) {
+  transpose(matrix: number[][]) {
     this.isError = false;
     this.isLoading = true;
 
-    const rows = elements.length;
-    const cols = elements[0].length;
+    const rows = matrix.length;
+    const cols = matrix[0].length;
 
     const transposed: number[][] = Array.from({ length: cols }, () => []);
 
     for (let i = 0; i < rows; i++) {
       for (let j = 0; j < cols; j++) {
-        transposed[j][i] = elements[i][j];
+        transposed[j][i] = matrix[i][j];
       }
     }
 
     this.result = transposed;
+    this.isShowResult = true;
     this.isLoading = false;
   }
 
-  invers(elements: number[][]): number[][] {
+  invers(matrix: number[][]): number[][] {
     this.isError = false;
-    return elements;
+    return matrix;
   }
 
-  add(firstElements: number[][], secondElements: number[][]) {
-    if (firstElements.length != secondElements.length) {
+  add(matrix1: number[][], matrix2: number[][]) {
+    if (matrix1.length != matrix2.length) {
       this.isError = true;
-      this.errorMessage = `Tidak dapat melakukan operasi ${this.operation}, jumlah baris dan kolom matrix pertama tidak sama dengan matrix kedua`;
+      this.errorMessage = `Tidak dapat melakukan operasi ${this.matrixOperation}, jumlah baris dan kolom matrix pertama tidak sama dengan matrix kedua`;
     } else {
       this.isError = false;
+      this.matrix1 = matrix1.map((rowValue) =>
+        rowValue.map((colValue) =>
+          this.convertFractionToNumber(colValue.toString())
+        )
+      );
+      this.matrix2 = matrix2.map((rowValue) =>
+        rowValue.map((colValue) =>
+          this.convertFractionToNumber(colValue.toString())
+        )
+      );
       this.result = [];
-      for (let i = 0; i < firstElements.length; i++) {
+      this.steps = [];
+      for (let i = 0; i < matrix1.length; i++) {
         const rows: number[] = [];
-        for (let j = 0; j < firstElements[i].length; j++) {
+        const tempSteps: string[] = [];
+        for (let j = 0; j < matrix1[i].length; j++) {
+          matrix1[i][j] = this.convertFractionToNumber(
+            matrix1[i][j].toString()
+          );
+          matrix2[i][j] = this.convertFractionToNumber(
+            matrix2[i][j].toString()
+          );
+
           const tempElementRows: number =
-            Number(firstElements[i][j]) + Number(secondElements[i][j]);
+            Number(matrix1[i][j]) + Number(matrix2[i][j]);
+
+          const tempConvertNumToFract1 =
+            this.numberToFractionServcie.numberToFraction(matrix1[i][j]);
+          const tempConvertNumToFract2 =
+            this.numberToFractionServcie.numberToFraction(matrix2[i][j]);
+          tempSteps.push(
+            `(${tempConvertNumToFract1} + ${tempConvertNumToFract2})`
+          );
           rows.push(tempElementRows);
         }
         this.result.push(rows);
+        this.steps.push(tempSteps);
       }
     }
+
+    this.isShowResult = true;
     this.isLoading = false;
   }
 
-  reduce(firstElements: number[][], secondElements: number[][]) {
-    if (firstElements.length != secondElements.length) {
-      this.isLoading = false;
+  reduce(matrix1: number[][], matrix2: number[][]) {
+    if (matrix1.length != matrix2.length) {
       this.isError = true;
+      this.errorMessage = `Tidak dapat melakukan operasi ${this.matrixOperation}, jumlah baris dan kolom matrix pertama tidak sama dengan matrix kedua`;
     } else {
-      this.isLoading = false;
       this.isError = false;
+      this.matrix1 = matrix1.map((rowValue) =>
+        rowValue.map((colValue) =>
+          this.convertFractionToNumber(colValue.toString())
+        )
+      );
+      this.matrix2 = matrix2.map((rowValue) =>
+        rowValue.map((colValue) =>
+          this.convertFractionToNumber(colValue.toString())
+        )
+      );
       this.result = [];
-      for (let i = 0; i < firstElements.length; i++) {
+      this.steps = [];
+      for (let i = 0; i < matrix1.length; i++) {
         const rows: number[] = [];
-        for (let j = 0; j < firstElements[i].length; j++) {
+        const tempSteps: string[] = [];
+        for (let j = 0; j < matrix1[i].length; j++) {
+          matrix1[i][j] = this.convertFractionToNumber(
+            matrix1[i][j].toString()
+          );
+          matrix2[i][j] = this.convertFractionToNumber(
+            matrix2[i][j].toString()
+          );
+
           const tempElementRows: number =
-            Number(firstElements[i][j]) - Number(secondElements[i][j]);
+            Number(matrix1[i][j]) - Number(matrix2[i][j]);
+
+          const tempConvertNumToFract1 =
+            this.numberToFractionServcie.numberToFraction(matrix1[i][j]);
+          const tempConvertNumToFract2 =
+            this.numberToFractionServcie.numberToFraction(matrix2[i][j]);
+          tempSteps.push(
+            `(${tempConvertNumToFract1} - ${tempConvertNumToFract2})`
+          );
           rows.push(tempElementRows);
         }
         this.result.push(rows);
+        this.steps.push(tempSteps);
       }
     }
+    this.isShowResult = true;
+    this.isLoading = false;
   }
 
-  inversAndMultiply(firstElements: number[][], secondElements: number[][]) {
-    const invers = this.invers(firstElements);
-    this.multiply(invers, secondElements);
+  inversAndMultiply(matrix1: number[][], matrix2: number[][]) {
+    const invers = this.invers(matrix1);
+    this.multiply(invers, matrix2);
   }
 
   handleModalClose(isError: boolean): void {
     this.isError = isError;
+    this.resetMatrixValue();
+  }
+
+  scrollToSection() {
+    this.resultSection.nativeElement.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
+  }
+
+  convertFractionToNumber(value: string): number {
+    let result: number = 0;
+    if (value.includes('/')) {
+      const fractionValue = new Fraction(value);
+      result = (fractionValue.s * fractionValue.n) / fractionValue.d;
+    }
+    return result ? result : Number(value);
+  }
+
+  sanitizeHtml(html: string): SafeHtml {
+    return this.htmlSanitizerService.sanitizeHtml(html);
   }
 }

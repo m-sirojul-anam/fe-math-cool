@@ -1,6 +1,4 @@
-export interface MatricesModel {}
-
-export type OperationType =
+export type MatrixOperationType =
   | 'MULTIPLY_A'
   | 'DET_A'
   | 'DET_A'

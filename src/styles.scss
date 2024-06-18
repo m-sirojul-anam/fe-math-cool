@@ -5,3 +5,19 @@
 body {
     @apply bg-gray-300;
 }
+
+#tableResult,
+#tableSteps,
+#tableProblems {
+    td {
+        @apply border-gray-600 w-auto p-2;
+    }
+}
+
+.border-matrix-left {
+    @apply border-s border-t border-b ps-4 w-auto;
+}
+
+.border-matrix-right {
+    @apply border-e border-t border-b ps-4 w-auto;
+}

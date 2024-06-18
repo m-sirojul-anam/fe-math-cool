@@ -6,20 +6,6 @@ tbody {
     }
 }
 
-#tableResult {
-    td {
-        @apply border-gray-600 w-auto p-1;
-    }
-}
-
-.border-result-left {
-    @apply border-s border-t border-b ps-4 w-auto;
-}
-
-.border-result-right {
-    @apply border-e border-t border-b ps-4 w-auto;
-}
-
 td > input {
     @apply ps-1 p-0 w-full h-full focus:outline-none focus:border-transparent rounded-md;
 }
