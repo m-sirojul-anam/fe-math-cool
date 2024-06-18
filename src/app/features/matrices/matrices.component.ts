@@ -1,5 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
 import {
   AbstractControl,
   FormBuilder,
@@ -141,6 +147,7 @@ export class MatricesComponent implements OnInit {
   isDisabled: boolean = false;
   isLoading: boolean = false;
   errorMessage: string = '';
+  isHideSteps: boolean = false;
 
   constructor(
     private formBuilder: FormBuilder,
@@ -212,8 +219,16 @@ export class MatricesComponent implements OnInit {
 
   resetMatrixValue(): void {
     this.isShowResult = false;
-    this.formMatrixA = this.createMatrixForm(this.rowCount, this.colCount);
-    this.formMatrixB = this.createMatrixForm(this.rowCount, this.colCount);
+    this.setActiveElementMatrix(
+      'A',
+      this.formSettingMatrixA.get('rows')?.value,
+      this.formSettingMatrixA.get('cols')?.value
+    );
+    this.setActiveElementMatrix(
+      'B',
+      this.formSettingMatrixB.get('rows')?.value,
+      this.formSettingMatrixB.get('cols')?.value
+    );
   }
 
   createMatrixForm(rows: number, cols: number): FormGroup {
@@ -354,12 +369,15 @@ export class MatricesComponent implements OnInit {
     switch (matrixOperation) {
       case 'MULTIPLY_A':
         this.operator = UnaryOperators.Multiply;
+        this.isHideSteps = false;
         this.multiply(this.matrixA, this.matrixA);
         break;
       case 'DET_A':
         this.determinan(this.matrixA);
         break;
       case 'TRANSPOSE_A':
+        this.operator = UnaryOperators.Empty;
+        this.isHideSteps = true;
         this.transpose(this.matrixA);
         break;
       case 'INVERS_A':
@@ -367,12 +385,15 @@ export class MatricesComponent implements OnInit {
         break;
       case 'MULTIPLY_B':
         this.operator = UnaryOperators.Multiply;
+        this.isHideSteps = false;
         this.multiply(this.matrixB, this.matrixB);
         break;
       case 'DET_B':
         this.determinan(this.matrixB);
         break;
       case 'TRANSPOSE_B':
+        this.isHideSteps = true;
+        this.operator = UnaryOperators.Empty;
         this.transpose(this.matrixB);
         break;
       case 'INVERS_B':
@@ -384,14 +405,17 @@ export class MatricesComponent implements OnInit {
         break;
       case 'ADD_A_B':
         this.operator = UnaryOperators.Plus;
+        this.isHideSteps = false;
         this.add(this.matrixA, this.matrixB);
         break;
       case 'REDUCE_A_B':
         this.operator = UnaryOperators.Minus;
+        this.isHideSteps = false;
         this.reduce(this.matrixA, this.matrixB);
         break;
       case 'REDUCE_B_A':
         this.operator = UnaryOperators.Minus;
+        this.isHideSteps = false;
         this.reduce(this.matrixB, this.matrixA);
         break;
       case 'INVERS_A_MULTIPLY_B':
@@ -411,6 +435,8 @@ export class MatricesComponent implements OnInit {
       this.errorMessage = `Tidak dapat melakukan operasi ${this.matrixOperation}, jumlah kolom matrix pertama tidak sama dengan jumlah baris matrix kedua`;
     } else {
       this.isError = false;
+      this.validateEmptyElement(matrix1);
+      this.validateEmptyElement(matrix2);
       this.matrix1 = matrix1.map((rowValue) =>
         rowValue.map((colValue) =>
           this.convertFractionToNumber(colValue.toString())
@@ -465,6 +491,7 @@ export class MatricesComponent implements OnInit {
       return 0;
     } else {
       this.isError = false;
+      this.validateEmptyElement(matrix);
       this.determinantResult = [];
 
       const n = matrix.length;
@@ -516,10 +543,18 @@ export class MatricesComponent implements OnInit {
 
   transpose(matrix: number[][]) {
     this.isError = false;
-    this.isLoading = true;
 
     const rows = matrix.length;
     const cols = matrix[0].length;
+
+    this.validateEmptyElement(matrix);
+
+    this.matrix1 = matrix.map((rowValue) =>
+      rowValue.map((colValue) =>
+        this.convertFractionToNumber(colValue.toString())
+      )
+    );
+    this.matrix2 = [];
 
     const transposed: number[][] = Array.from({ length: cols }, () => []);
 
@@ -545,6 +580,8 @@ export class MatricesComponent implements OnInit {
       this.errorMessage = `Tidak dapat melakukan operasi ${this.matrixOperation}, jumlah baris dan kolom matrix pertama tidak sama dengan matrix kedua`;
     } else {
       this.isError = false;
+      this.validateEmptyElement(matrix1);
+      this.validateEmptyElement(matrix2);
       this.matrix1 = matrix1.map((rowValue) =>
         rowValue.map((colValue) =>
           this.convertFractionToNumber(colValue.toString())
@@ -595,6 +632,8 @@ export class MatricesComponent implements OnInit {
       this.errorMessage = `Tidak dapat melakukan operasi ${this.matrixOperation}, jumlah baris dan kolom matrix pertama tidak sama dengan matrix kedua`;
     } else {
       this.isError = false;
+      this.validateEmptyElement(matrix1);
+      this.validateEmptyElement(matrix2);
       this.matrix1 = matrix1.map((rowValue) =>
         rowValue.map((colValue) =>
           this.convertFractionToNumber(colValue.toString())
@@ -646,6 +685,7 @@ export class MatricesComponent implements OnInit {
   handleModalClose(isError: boolean): void {
     this.isError = isError;
     this.resetMatrixValue();
+    this.scrollToTop();
   }
 
   scrollToSection() {
@@ -653,6 +693,10 @@ export class MatricesComponent implements OnInit {
       behavior: 'smooth',
       block: 'start',
     });
+  }
+
+  scrollToTop() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   convertFractionToNumber(value: string): number {
@@ -666,5 +710,17 @@ export class MatricesComponent implements OnInit {
 
   sanitizeHtml(html: string): SafeHtml {
     return this.htmlSanitizerService.sanitizeHtml(html);
+  }
+
+  validateEmptyElement(matrix: number[][]): void {
+    const flatMatrix = matrix.flat();
+    const emptyElements = flatMatrix.filter(
+      (element) => element.toString() === ''
+    );
+
+    if (emptyElements.length > 0) {
+      this.isError = true;
+      this.errorMessage = `Elemen tidak boleh kosong`;
+    }
   }
 }

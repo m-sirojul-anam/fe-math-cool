@@ -149,15 +149,14 @@
             [matrixOperation]="matrixOperation"
             [matrix1]="matrix1"
             [matrix2]="matrix2"
-            *ngIf="!isError"
           ></app-problems>
           <app-steps
             [matrixOperation]="matrixOperation"
             [steps]="steps"
-            *ngIf="!isError"
+            *ngIf="!isHideSteps"
           ></app-steps>
           <div>
-            <table id="tableResult" class="table-auto text-sm" *ngIf="!isError">
+            <table id="tableResult" class="table-auto text-sm">
               <tbody *ngIf="result.length > 0">
                 <tr *ngFor="let items of result; let i = index">
                   <td *ngIf="i == 0" [attr.rowspan]="result.length">

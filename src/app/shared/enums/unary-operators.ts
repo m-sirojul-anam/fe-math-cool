@@ -3,4 +3,5 @@ export enum UnaryOperators {
   Minus = '-',
   Multiply = '*',
   Divide = '/',
+  Empty = '',
 }
