@@ -1,6 +1,6 @@
 <div class="flex justify-start gap-4" *ngIf="matrixOperation && matrix1">
   <div class="flex justify-center items-center">
-    {{ matrixOperation | decodeHtml }} =
+    {{ getLabelByValue(matrixOperation) | decodeHtml }} =
   </div>
   <div class="flex justify-center">
     <table id="tableProblems" class="table-auto text-sm">
@@ -25,7 +25,7 @@
     </table>
   </div>
   <div class="flex justify-center items-center p-0">{{ operator }}</div>
-  <div class="flex justify-center p-0">
+  <div class="flex justify-center">
     <table id="tableProblems" class="table-auto text-sm">
       <tbody *ngIf="matrix2 && matrix2.length > 0">
         <tr *ngFor="let items of matrix2; let i = index">

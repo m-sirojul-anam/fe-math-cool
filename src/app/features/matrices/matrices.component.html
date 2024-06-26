@@ -114,7 +114,7 @@
     <button
       type="button"
       class="bg-blue-400 hover:bg-blue-500 active:bg-blue-600 active:shadow-md hover:cursor-pointer text-white py-2 px-3 rounded-md disabled:bg-gray-400 disabled:cursor-not-allowed"
-      *ngFor="let item of listMatrixmatrixOperation"
+      *ngFor="let item of listMatrixOperation"
       (click)="selectmatrixOperation(item.value)"
       [disabled]="item.disabled"
     >
@@ -152,41 +152,44 @@
           ></app-problems>
           <app-steps
             [matrixOperation]="matrixOperation"
+            [preSteps]="matrix1"
             [steps]="steps"
+            [determinantSteps]="determinantSteps"
             *ngIf="!isHideSteps"
           ></app-steps>
-          <div>
-            <table id="tableResult" class="table-auto text-sm">
-              <tbody *ngIf="result.length > 0">
-                <tr *ngFor="let items of result; let i = index">
-                  <td *ngIf="i == 0" [attr.rowspan]="result.length">
-                    {{ matrixOperation | decodeHtml }} =
-                  </td>
-                  <td
-                    *ngIf="i == 0"
-                    class="border-matrix-left"
-                    [attr.rowspan]="result.length"
-                  ></td>
-                  <td
-                    *ngFor="let item of items"
-                    [innerHtml]="sanitizeHtml(item | numberToFraction)"
-                  ></td>
-                  <td
-                    *ngIf="i == 0"
-                    class="border-matrix-right"
-                    [attr.rowspan]="result.length"
-                  ></td>
-                </tr>
-              </tbody>
-              <tbody *ngIf="determinantResult.length > 0">
-                <tr *ngFor="let item of determinantResult; let i = index">
-                  <td *ngIf="i == 0" [attr.rowspan]="result.length">
-                    {{ matrixOperation | decodeHtml }} =
-                  </td>
-                  <td>{{ item }}</td>
-                </tr>
-              </tbody>
-            </table>
+          <div class="flex justify-start gap-4">
+            <div class="flex justify-center items-center">
+              {{ getLabelByValue(matrixOperation) | decodeHtml }} =
+            </div>
+            <div class="flex justify-center">
+              <table id="tableResult" class="table-auto text-sm">
+                <tbody *ngIf="result.length > 0">
+                  <tr *ngFor="let items of result; let i = index">
+                    <td
+                      *ngIf="i == 0"
+                      class="border-matrix-left"
+                      [attr.rowspan]="result.length"
+                    ></td>
+                    <td
+                      *ngFor="let item of items"
+                      [innerHtml]="sanitizeHtml(item | numberToFraction)"
+                    ></td>
+                    <td
+                      *ngIf="i == 0"
+                      class="border-matrix-right"
+                      [attr.rowspan]="result.length"
+                    ></td>
+                  </tr>
+                </tbody>
+                <tbody *ngIf="determinantResult.length > 0">
+                  <tr *ngFor="let item of determinantResult; let i = index">
+                    <td
+                      [innerHtml]="sanitizeHtml(item | numberToFraction)"
+                    ></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </section>

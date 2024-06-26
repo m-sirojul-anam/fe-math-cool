@@ -1,8 +1,12 @@
-<table id="tableSteps" class="table-auto text-sm">
-  <tbody *ngIf="steps.length > 0">
+<table
+  id="tableSteps"
+  class="table-auto text-sm"
+  *ngIf="steps.length > 0 && !matrixOperation?.includes('TRANSPOSE')"
+>
+  <tbody>
     <tr *ngFor="let items of steps; let i = index">
       <td *ngIf="i == 0" [attr.rowspan]="steps.length">
-        {{ matrixOperation | decodeHtml }} =
+        {{ getLabelByValue(matrixOperation) | decodeHtml }} =
       </td>
       <td
         *ngIf="i == 0"
@@ -18,3 +22,98 @@
     </tr>
   </tbody>
 </table>
+
+<div
+  class="flex justify-start gap-4"
+  *ngIf="steps.length > 0 && matrixOperation.includes('TRANSPOSE')"
+>
+  <div class="flex justify-center items-center">
+    {{ getLabelByValue(matrixOperation) | decodeHtml }} =
+  </div>
+  <div class="flex justify-center">
+    <table id="tableSteps" class="table-auto text-sm">
+      <tbody>
+        <tr *ngFor="let items of preSteps; let i = index">
+          <td
+            *ngIf="i == 0"
+            class="border-matrix-left"
+            [attr.rowspan]="preSteps.length"
+          ></td>
+          <td
+            *ngFor="let item of items"
+            [innerHtml]="sanitizeHtml(item.toString())"
+            [ngClass]="{ 'bg-slate-200': i == 0 }"
+          ></td>
+          <td
+            *ngIf="i == 0"
+            class="border-matrix-right"
+            [attr.rowspan]="preSteps.length"
+          ></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="flex justify-center items-center">=></div>
+  <table id="tableSteps" class="table-auto text-sm">
+    <tbody>
+      <tr *ngFor="let items of steps; let i = index">
+        <td
+          *ngIf="i == 0"
+          class="border-matrix-left"
+          [attr.rowspan]="steps.length"
+        ></td>
+        <td
+          *ngFor="let item of items; let j = index"
+          [innerHtml]="sanitizeHtml(item.toString())"
+          [ngClass]="{ 'bg-slate-200': j == 0 }"
+        ></td>
+        <td
+          *ngIf="i == 0"
+          class="border-matrix-right"
+          [attr.rowspan]="steps.length"
+        ></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="flex justify-start gap-4" *ngIf="matrixOperation.includes('DET')">
+  <div class="flex justify-center items-center">
+    {{ getLabelByValue(matrixOperation) | decodeHtml }} =
+  </div>
+  <div class="flex justify-center">
+    <table id="tableSteps" class="table-auto text-sm">
+      <tbody>
+        <tr *ngFor="let items of preSteps; let i = index">
+          <td
+            *ngIf="i == 0"
+            class="border-matrix-left"
+            [attr.rowspan]="preSteps.length"
+          ></td>
+          <td
+            *ngFor="let item of items; let j = index"
+            [innerHtml]="sanitizeHtml(item | numberToFraction)"
+            class="rounded-md"
+            [ngClass]="{
+              'bg-slate-200': i == j,
+              'bg-orange-200': i != j
+            }"
+          ></td>
+          <td
+            *ngIf="i == 0"
+            class="border-matrix-right"
+            [attr.rowspan]="preSteps.length"
+          ></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="flex justify-center items-center">=></div>
+  <table id="tableSteps" class="table-auto text-sm">
+    <tbody>
+      <tr *ngFor="let item of determinantSteps">
+        <td>{{ item }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
