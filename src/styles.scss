@@ -6,7 +6,12 @@ body {
     @apply bg-gray-100;
 }
 
-#tableResult,
+#tableResult {
+    td {
+        @apply border-gray-600 p-3 text-center;
+    }
+}
+
 #tableSteps,
 #tableProblems {
     td {

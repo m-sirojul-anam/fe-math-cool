@@ -300,27 +300,31 @@ export class MatricesComponent implements OnInit {
     this.matrixOperation = matrixOperation;
     switch (matrixOperation) {
       case 'MULTIPLY_A':
-        this.operator = UnaryOperators.Multiply;
         this.isHideSteps = false;
+        this.operator = UnaryOperators.Multiply;
         this.multiply(this.matrixA, this.matrixA);
         break;
       case 'DET_A':
+        this.isHideSteps = false;
+        this.operator = UnaryOperators.Empty;
         this.determinan(this.matrixA);
         break;
       case 'TRANSPOSE_A':
-        this.operator = UnaryOperators.Empty;
         this.isHideSteps = false;
+        this.operator = UnaryOperators.Empty;
         this.transpose(this.matrixA);
         break;
       case 'INVERS_A':
         this.invers(this.matrixA);
         break;
       case 'MULTIPLY_B':
-        this.operator = UnaryOperators.Multiply;
         this.isHideSteps = false;
+        this.operator = UnaryOperators.Multiply;
         this.multiply(this.matrixB, this.matrixB);
         break;
       case 'DET_B':
+        this.isHideSteps = false;
+        this.operator = UnaryOperators.Empty;
         this.determinan(this.matrixB);
         break;
       case 'TRANSPOSE_B':
@@ -332,6 +336,7 @@ export class MatricesComponent implements OnInit {
         this.invers(this.matrixB);
         break;
       case 'MULTIPLY_A_B':
+        this.isHideSteps = false;
         this.operator = UnaryOperators.Multiply;
         this.multiply(this.matrixA, this.matrixB);
         break;
@@ -381,6 +386,8 @@ export class MatricesComponent implements OnInit {
       );
       this.result = [];
       this.steps = [];
+      this.determinantResult = [];
+      this.determinantSteps = [];
       for (let i = 0; i < matrix1.length; i++) {
         this.result[i] = [];
         this.steps[i] = [];
@@ -429,6 +436,12 @@ export class MatricesComponent implements OnInit {
           this.convertFractionToNumber(colValue.toString())
         )
       );
+
+      this.matrix2 = [];
+      this.result = [];
+      this.steps = [];
+      this.determinantResult = [];
+      this.determinantSteps = [];
 
       if (matrix.length <= 3) {
         this.determinantSarrus(matrix);
@@ -497,6 +510,10 @@ export class MatricesComponent implements OnInit {
       )
     );
     this.matrix2 = [];
+    this.result = [];
+    this.steps = [];
+    this.determinantResult = [];
+    this.determinantSteps = [];
 
     const transposed: number[][] = Array.from({ length: cols }, () => []);
 
@@ -539,6 +556,8 @@ export class MatricesComponent implements OnInit {
       );
       this.result = [];
       this.steps = [];
+      this.determinantResult = [];
+      this.determinantSteps = [];
       for (let i = 0; i < matrix1.length; i++) {
         const rows: number[] = [];
         const tempSteps: string[] = [];
@@ -591,6 +610,8 @@ export class MatricesComponent implements OnInit {
       );
       this.result = [];
       this.steps = [];
+      this.determinantResult = [];
+      this.determinantSteps = [];
       for (let i = 0; i < matrix1.length; i++) {
         const rows: number[] = [];
         const tempSteps: string[] = [];
@@ -657,8 +678,14 @@ export class MatricesComponent implements OnInit {
       }
       const tempStepsFirstDiagonal = `(${tempFirstDiagonal.join(' * ')})`;
       const tempStepsSecondDiagonal = `(${tempSecondDiagonal.join(' * ')})`;
+
+      const tempConvertNumToFractFirstDiagonal =
+        this.numberToFractionServcie.numberToFraction(firstDiagonal);
+      const tempConvertNumToFractSecondDiagonal =
+        this.numberToFractionServcie.numberToFraction(secondDiagonal);
+
       this.determinantSteps.push(
-        `${tempStepsFirstDiagonal} - ${tempStepsSecondDiagonal}`
+        `${tempStepsFirstDiagonal} - ${tempStepsSecondDiagonal} = ${tempConvertNumToFractFirstDiagonal} - ${tempConvertNumToFractSecondDiagonal}`
       );
       this.determinantResult.push(firstDiagonal - secondDiagonal);
     }

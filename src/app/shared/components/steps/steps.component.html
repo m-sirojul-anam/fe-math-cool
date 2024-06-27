@@ -24,7 +24,7 @@
 </table>
 
 <div
-  class="flex justify-start gap-4"
+  class="flex flex-col xl:flex-row justify-start gap-4"
   *ngIf="steps.length > 0 && matrixOperation.includes('TRANSPOSE')"
 >
   <div class="flex justify-center items-center">
@@ -54,66 +54,169 @@
     </table>
   </div>
   <div class="flex justify-center items-center">=></div>
-  <table id="tableSteps" class="table-auto text-sm">
-    <tbody>
-      <tr *ngFor="let items of steps; let i = index">
-        <td
-          *ngIf="i == 0"
-          class="border-matrix-left"
-          [attr.rowspan]="steps.length"
-        ></td>
-        <td
-          *ngFor="let item of items; let j = index"
-          [innerHtml]="sanitizeHtml(item.toString())"
-          [ngClass]="{ 'bg-slate-200': j == 0 }"
-        ></td>
-        <td
-          *ngIf="i == 0"
-          class="border-matrix-right"
-          [attr.rowspan]="steps.length"
-        ></td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-
-<div class="flex justify-start gap-4" *ngIf="matrixOperation.includes('DET')">
-  <div class="flex justify-center items-center">
-    {{ getLabelByValue(matrixOperation) | decodeHtml }} =
-  </div>
-  <div class="flex justify-center">
+  <div
+    class="flex justify-center items-center md:order-1 order-last mt-4 md:mt-0"
+  >
     <table id="tableSteps" class="table-auto text-sm">
       <tbody>
-        <tr *ngFor="let items of preSteps; let i = index">
+        <tr *ngFor="let items of steps; let i = index">
           <td
             *ngIf="i == 0"
             class="border-matrix-left"
-            [attr.rowspan]="preSteps.length"
+            [attr.rowspan]="steps.length"
           ></td>
           <td
             *ngFor="let item of items; let j = index"
-            [innerHtml]="sanitizeHtml(item | numberToFraction)"
-            class="rounded-md"
-            [ngClass]="{
-              'bg-slate-200': i == j,
-              'bg-orange-200': i != j
-            }"
+            [innerHtml]="sanitizeHtml(item.toString())"
+            [ngClass]="{ 'bg-slate-200': j == 0 }"
           ></td>
           <td
             *ngIf="i == 0"
             class="border-matrix-right"
-            [attr.rowspan]="preSteps.length"
+            [attr.rowspan]="steps.length"
           ></td>
         </tr>
       </tbody>
     </table>
   </div>
-  <div class="flex justify-center items-center">=></div>
-  <table id="tableSteps" class="table-auto text-sm">
-    <tbody>
-      <tr *ngFor="let item of determinantSteps">
-        <td>{{ item }}</td>
-      </tr>
-    </tbody>
-  </table>
+</div>
+
+<div
+  class="flex flex-col md:flex-row md:justify-between xl:justify-normal"
+  *ngIf="matrixOperation.includes('DET')"
+>
+  <div class="flex items-center md:self-start">
+    <div class="flex items-center p-3">
+      {{ getLabelByValue(matrixOperation) | decodeHtml }} =
+    </div>
+
+    <!-- For Pre Steps matrix 2x2 -->
+    <div class="flex justify-center" *ngIf="preSteps.length == 2">
+      <table id="tableSteps" class="table-auto text-sm">
+        <tbody>
+          <tr *ngFor="let items of preSteps; let i = index">
+            <td
+              *ngIf="i == 0"
+              class="border-matrix-left"
+              [attr.rowspan]="preSteps.length"
+            ></td>
+            <td
+              *ngFor="let item of items; let j = index"
+              [innerHtml]="sanitizeHtml(item | numberToFraction)"
+              class="rounded-md"
+              [ngClass]="{
+                'bg-slate-200': i == j,
+                'bg-red-200': i != j
+              }"
+            ></td>
+            <td
+              *ngIf="i == 0"
+              class="border-matrix-right"
+              [attr.rowspan]="preSteps.length"
+            ></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- For Pre Steps matrix 3x3 -->
+    <div class="flex flex-col gap-2" *ngIf="preSteps.length == 3">
+      <div class="flex justify-center">
+        <table id="tableSteps" class="table-auto text-sm">
+          <tbody>
+            <tr *ngFor="let items of preSteps; let i = index">
+              <td
+                *ngIf="i == 0"
+                class="border-matrix-left"
+                [attr.rowspan]="preSteps.length"
+              ></td>
+              <td
+                *ngFor="let item of items; let j = index"
+                [innerHtml]="sanitizeHtml(item | numberToFraction)"
+                class="rounded-md"
+                [ngClass]="{
+                'bg-slate-200': i == j,
+                'bg-red-200': j == (i + 1) % 4,
+                'bg-green-200': j == (i + 2) % 5,
+              }"
+              ></td>
+              <td
+                *ngIf="i == 0"
+                class="border-matrix-right"
+                [attr.rowspan]="preSteps.length"
+              ></td>
+              <ng-container *ngFor="let item of items; let j = index">
+                <td
+                  *ngIf="j < 2 && items.length == 3"
+                  [innerHtml]="sanitizeHtml(item | numberToFraction)"
+                  class="rounded-md"
+                  [ngClass]="{
+                    'bg-red-200': i == items.length - 1 && j == 0,
+                    'bg-green-200': j == (i + 2) % 3
+                  }"
+                ></td>
+              </ng-container>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="flex justify-center">
+        <table id="tableSteps" class="table-auto text-sm">
+          <tbody>
+            <tr *ngFor="let items of preSteps; let i = index">
+              <td
+                *ngIf="i == 0"
+                class="border-matrix-left"
+                [attr.rowspan]="preSteps.length"
+              ></td>
+              <td
+                *ngFor="let item of items; let j = index"
+                [innerHtml]="sanitizeHtml(item | numberToFraction)"
+                class="rounded-md"
+                [ngClass]="{
+                'bg-slate-200': j == items.length - 1 - i,
+                'bg-red-200': i > 0 && j == items.length - i,
+                'bg-green-200': i > 1 && j == items.length + 1 - i,
+              }"
+              ></td>
+              <td
+                *ngIf="i == 0"
+                class="border-matrix-right"
+                [attr.rowspan]="preSteps.length"
+              ></td>
+              <ng-container *ngFor="let item of items; let j = index">
+                <td
+                  *ngIf="j < 2 && items.length == 3"
+                  [innerHtml]="sanitizeHtml(item | numberToFraction)"
+                  class="rounded-md"
+                  [ngClass]="{
+                    'bg-red-200': i == 0 && j == i,
+                    'bg-green-200': j == items.length - 2 - i
+                  }"
+                ></td>
+              </ng-container>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex flex-col md:flex-row">
+    <div
+      class="flex justify-center items-center md:order-1 order-last mt-4 md:mt-0"
+    >
+      =>
+    </div>
+    <table
+      id="tableSteps"
+      class="table-auto text-sm md:order-1 order-last mt-4 md:mt-0"
+    >
+      <tbody>
+        <tr *ngFor="let item of determinantSteps">
+          <td>{{ item }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </div>
